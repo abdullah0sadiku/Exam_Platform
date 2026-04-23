@@ -23,13 +23,22 @@ ENV ENCRYPTION_KEY=build-time-placeholder-32chars!!
 
 RUN npm run build
 
-# Copy Prisma engine binaries into the standalone bundle
+# Copy runtime dependencies that Next.js standalone tracing misses.
+#
+# Rule: when the destination directory already exists (because Next.js tracing
+# partially populated it), `cp -r src dest` nests src *inside* dest instead of
+# merging.  Use explicit file/subdir copies to stay in control.
 RUN cp -r node_modules/.prisma .next/standalone/node_modules/.prisma && \
     cp -r node_modules/@prisma/adapter-pg .next/standalone/node_modules/@prisma/adapter-pg || true && \
     cp -r node_modules/pg .next/standalone/node_modules/pg || true && \
     cp -r node_modules/pg-protocol .next/standalone/node_modules/pg-protocol || true && \
-    cp -r node_modules/pdf-parse .next/standalone/node_modules/pdf-parse || true && \
-    cp -r node_modules/mammoth .next/standalone/node_modules/mammoth || true
+    cp -r node_modules/mammoth .next/standalone/node_modules/mammoth || true && \
+    \
+    # pdf-parse: Next.js traces index.cjs but not the worker (dynamically loaded).
+    # The CJS bundle ships pdf.worker.mjs alongside index.cjs; copy it to the
+    # exact path that require.resolve("pdf-parse") resolves to at runtime.
+    cp node_modules/pdf-parse/dist/pdf-parse/cjs/pdf.worker.mjs \
+       .next/standalone/node_modules/pdf-parse/dist/pdf-parse/cjs/pdf.worker.mjs || true
 
 # ── Stage 3: lean production image ───────────────────────────────────────────
 FROM node:20-alpine AS runner
