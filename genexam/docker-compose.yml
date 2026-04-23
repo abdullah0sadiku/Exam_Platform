@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: genexam
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./prisma/migrations/0001_init/migration.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - psql -U postgres -d genexam -c 'SELECT 1 FROM "User" LIMIT 1' > /dev/null 2>&1
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/genexam?schema=public
+      NEXTAUTH_SECRET: change-me-in-production-use-openssl-rand-base64-32
+      NEXTAUTH_URL: http://localhost:3000
+      AUTH_TRUST_HOST: "true"
+      ENCRYPTION_KEY: change-me-exactly-32-chars-here!!
+      NODE_ENV: production
+    volumes:
+      - uploads_data:/app/uploads
+
+volumes:
+  postgres_data:
+  uploads_data:

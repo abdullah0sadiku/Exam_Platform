@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  hashedPassword String?
+  image          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  providerConfigs AIProviderConfig[]
+  exams           Exam[]
+  generationLogs  GenerationLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model AIProviderConfig {
+  id              String   @id @default(cuid())
+  userId          String
+  providerType    String
+  label           String
+  encryptedApiKey String   @db.Text
+  modelName       String
+  baseUrl         String?
+  temperature     Float    @default(0.7)
+  maxTokens       Int      @default(4096)
+  systemPrompt    String?  @db.Text
+  isDefault       Boolean  @default(false)
+  settings        Json     @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generationLogs GenerationLog[]
+}
+
+model Exam {
+  id                     String     @id @default(cuid())
+  userId                 String
+  title                  String
+  description            String?    @db.Text
+  sourceType             String     @default("TOPIC")
+  status                 String     @default("DRAFT")
+  instructions           String?    @db.Text
+  durationMinutes        Int?
+  passingScore           Int        @default(70)
+  totalPoints            Int        @default(0)
+  showResultsImmediately Boolean    @default(true)
+  showExplanations       Boolean    @default(true)
+  shuffleQuestions       Boolean    @default(false)
+  shuffleAnswers         Boolean    @default(false)
+  allowRetake            Boolean    @default(true)
+  requireNameEmail       Boolean    @default(true)
+  metadata               Json       @default("{}")
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions      ExamQuestion[]
+  sources        ExamSource[]
+  shareLinks     ShareLink[]
+  attempts       ExamAttempt[]
+  generationLogs GenerationLog[]
+}
+
+model ExamQuestion {
+  id              String  @id @default(cuid())
+  examId          String
+  questionText    String  @db.Text
+  questionType    String  @default("MULTIPLE_CHOICE")
+  options         Json    @default("[]")
+  correctAnswer   Json
+  explanation     String? @db.Text
+  difficulty      String  @default("MEDIUM")
+  topicTag        String?
+  sourceReference String?
+  points          Int     @default(1)
+  orderIndex      Int     @default(0)
+  metadata        Json    @default("{}")
+
+  exam           Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  attemptAnswers AttemptAnswer[]
+}
+
+model ExamSource {
+  id             String   @id @default(cuid())
+  examId         String
+  sourceType     String
+  fileName       String?
+  extractedText  String?  @db.Text
+  sourceMetadata Json     @default("{}")
+  createdAt      DateTime @default(now())
+
+  exam Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+}
+
+model ShareLink {
+  id        String    @id @default(cuid())
+  examId    String
+  token     String    @unique @default(cuid())
+  isActive  Boolean   @default(true)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  exam     Exam          @relation(fields: [examId], references: [id], onDelete: Cascade)
+  attempts ExamAttempt[]
+}
+
+model Candidate {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  attempts ExamAttempt[]
+}
+
+model ExamAttempt {
+  id              String    @id @default(cuid())
+  examId          String
+  candidateId     String
+  shareLinkId     String?
+  status          String    @default("STARTED")
+  score           Float?
+  percentage      Float?
+  startedAt       DateTime  @default(now())
+  submittedAt     DateTime?
+  durationSeconds Int?
+  resultSummary   Json      @default("{}")
+
+  exam      Exam          @relation(fields: [examId], references: [id], onDelete: Cascade)
+  candidate Candidate     @relation(fields: [candidateId], references: [id])
+  shareLink ShareLink?    @relation(fields: [shareLinkId], references: [id])
+  answers   AttemptAnswer[]
+}
+
+model AttemptAnswer {
+  id            String  @id @default(cuid())
+  attemptId     String
+  questionId    String
+  answer        Json
+  isCorrect     Boolean @default(false)
+  awardedPoints Float   @default(0)
+
+  attempt  ExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model GenerationLog {
+  id               String   @id @default(cuid())
+  userId           String
+  examId           String?
+  providerConfigId String?
+  generationMode   String
+  promptVersion    String   @default("1.0")
+  requestPayload   Json     @default("{}")
+  responsePayload  Json     @default("{}")
+  status           String
+  errorMessage     String?  @db.Text
+  tokenUsage       Json     @default("{}")
+  createdAt        DateTime @default(now())
+
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exam           Exam?             @relation(fields: [examId], references: [id], onDelete: SetNull)
+  providerConfig AIProviderConfig? @relation(fields: [providerConfigId], references: [id], onDelete: SetNull)
+}
