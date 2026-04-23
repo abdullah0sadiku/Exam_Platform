@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { BookOpen, LayoutDashboard, Settings, BarChart2, LogOut, Cpu } from "lucide-react";
+import { BookOpen, LayoutDashboard, Settings, BarChart2, LogOut, Cpu, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Session } from "next-auth";
 
 const nav = [
+  { href: "/dashboard/overview", label: "Overview", icon: TrendingUp },
   { href: "/dashboard", label: "Exams", icon: LayoutDashboard },
   { href: "/dashboard/config", label: "AI Providers", icon: Cpu },
   { href: "/dashboard/logs", label: "Logs", icon: BarChart2 },
@@ -29,7 +30,8 @@ export function Sidebar({ user }: { user: Session["user"] }) {
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {nav.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+          const exact = href === "/dashboard" || href === "/dashboard/overview";
+          const active = exact ? pathname === href : pathname.startsWith(href);
           return (
             <Link
               key={href}
