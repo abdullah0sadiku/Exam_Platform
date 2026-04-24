@@ -35,14 +35,16 @@ interface PublicExam {
 }
 
 interface ScoreResult {
-  score: number;
-  totalPoints: number;
-  percentage: number;
-  passed: boolean;
-  passingScore: number;
+  // When showResults is false the server strips score/passing info from the
+  // response, so everything except `showResults` may be undefined.
+  score?: number;
+  totalPoints?: number;
+  percentage?: number;
+  passed?: boolean;
+  passingScore?: number;
   showResults: boolean;
-  showExplanations: boolean;
-  resultSummary: {
+  showExplanations?: boolean;
+  resultSummary?: {
     correct: number;
     incorrect: number;
     skipped: number;
@@ -303,38 +305,59 @@ export function ExamTaker({ token }: { token: string }) {
   }
 
   if (phase === "result" && result) {
+    const showResults = result.showResults;
+    const passed = showResults && result.passed === true;
+    const summary = result.resultSummary;
     return (
       <FullscreenCenter>
         <div className="w-full max-w-md">
           <Card>
             <CardHeader className="text-center">
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ${result.passed ? "bg-emerald-100" : "bg-red-100"}`}>
-                <CheckCircle2 className={`w-7 h-7 ${result.passed ? "text-emerald-600" : "text-red-500"}`} />
+              <div
+                className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                  showResults ? (passed ? "bg-emerald-100" : "bg-red-100") : "bg-zinc-100"
+                }`}
+              >
+                <CheckCircle2
+                  className={`w-7 h-7 ${
+                    showResults ? (passed ? "text-emerald-600" : "text-red-500") : "text-zinc-500"
+                  }`}
+                />
               </div>
-              <CardTitle>{result.passed ? "Well done!" : "Exam complete"}</CardTitle>
-              <CardDescription>{result.passed ? "You passed!" : `Passing score: ${result.passingScore}%`}</CardDescription>
+              <CardTitle>
+                {showResults ? (passed ? "Well done!" : "Exam complete") : "Submission received"}
+              </CardTitle>
+              <CardDescription>
+                {showResults
+                  ? passed
+                    ? "You passed!"
+                    : `Passing score: ${result.passingScore}%`
+                  : "Thanks for completing the exam."}
+              </CardDescription>
             </CardHeader>
-            {result.showResults ? (
+            {showResults && summary ? (
               <CardContent className="space-y-4">
                 <div className="text-center">
                   <p className="text-4xl font-bold text-zinc-900">{result.percentage}%</p>
-                  <p className="text-sm text-zinc-500">{result.score} / {result.totalPoints} points</p>
+                  <p className="text-sm text-zinc-500">
+                    {result.score} / {result.totalPoints} points
+                  </p>
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div className="p-3 bg-emerald-50 rounded-lg">
-                    <p className="text-lg font-bold text-emerald-700">{result.resultSummary.correct}</p>
+                    <p className="text-lg font-bold text-emerald-700">{summary.correct}</p>
                     <p className="text-xs text-emerald-600">Correct</p>
                   </div>
                   <div className="p-3 bg-red-50 rounded-lg">
-                    <p className="text-lg font-bold text-red-700">{result.resultSummary.incorrect}</p>
+                    <p className="text-lg font-bold text-red-700">{summary.incorrect}</p>
                     <p className="text-xs text-red-600">Incorrect</p>
                   </div>
                   <div className="p-3 bg-zinc-50 rounded-lg">
-                    <p className="text-lg font-bold text-zinc-700">{result.resultSummary.skipped}</p>
+                    <p className="text-lg font-bold text-zinc-700">{summary.skipped}</p>
                     <p className="text-xs text-zinc-500">Skipped</p>
                   </div>
                 </div>
-                <Progress value={result.percentage} className="h-3" />
+                <Progress value={result.percentage ?? 0} className="h-3" />
               </CardContent>
             ) : (
               <CardContent className="text-center text-zinc-500 text-sm py-4">

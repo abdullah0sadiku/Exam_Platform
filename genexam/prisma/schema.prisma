@@ -21,6 +21,7 @@ model User {
   providerConfigs AIProviderConfig[]
   exams           Exam[]
   generationLogs  GenerationLog[]
+  emailConfig     UserEmailConfig?
 }
 
 model Account {
@@ -89,7 +90,7 @@ model Exam {
   durationMinutes        Int?
   passingScore           Int        @default(70)
   totalPoints            Int        @default(0)
-  showResultsImmediately Boolean    @default(true)
+  showResultsImmediately Boolean    @default(false)
   showExplanations       Boolean    @default(true)
   shuffleQuestions       Boolean    @default(false)
   shuffleAnswers         Boolean    @default(false)
@@ -188,6 +189,21 @@ model AttemptAnswer {
 
   attempt  ExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   question ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model UserEmailConfig {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  host              String
+  port              Int      @default(587)
+  secure            Boolean  @default(false)
+  username          String?
+  encryptedPassword String?  @db.Text
+  fromAddress       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model GenerationLog {

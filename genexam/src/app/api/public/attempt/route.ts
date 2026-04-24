@@ -132,15 +132,28 @@ async function handleSubmit(req: Request) {
       },
     });
 
+    // Results are always persisted server-side, but only returned to the
+    // candidate when the exam author has opted in to show them immediately.
+    // Otherwise strip score/pass/summary so the candidate can't read them
+    // via devtools on the submit response.
+    if (!exam.showResultsImmediately) {
+      return NextResponse.json({
+        submitted: true,
+        showResults: false,
+        attemptId: updated.id,
+      });
+    }
+
     const passed = scored.percentage >= exam.passingScore;
 
     return NextResponse.json({
+      submitted: true,
       score: scored.score,
       totalPoints: scored.totalPoints,
       percentage: scored.percentage,
       passed,
       passingScore: exam.passingScore,
-      showResults: exam.showResultsImmediately,
+      showResults: true,
       showExplanations: exam.showExplanations,
       resultSummary: scored.resultSummary,
       attemptId: updated.id,

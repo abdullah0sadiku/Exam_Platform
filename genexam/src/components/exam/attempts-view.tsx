@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Users, Trophy, TrendingUp, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, Users, Trophy, TrendingUp, CheckCircle, Clock, ChevronRight } from "lucide-react";
 import { formatDate, formatDuration } from "@/lib/utils";
 
 interface Attempt {
@@ -89,17 +89,18 @@ export function AttemptsView({ exam, attempts, analytics }: {
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="grid grid-cols-5 gap-4 px-4 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wide">
-            <span className="col-span-2">Candidate</span>
+          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 px-4 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wide">
+            <span>Candidate</span>
             <span>Status</span>
             <span>Score</span>
             <span>Date</span>
+            <span className="sr-only">Details</span>
           </div>
           {attempts.map((attempt) => {
             const passed = attempt.status === "SUBMITTED" && (attempt.percentage || 0) >= exam.passingScore;
-            return (
-              <div key={attempt.id} className="grid grid-cols-5 gap-4 items-center px-4 py-3 bg-white rounded-lg border border-zinc-200">
-                <div className="col-span-2">
+            const row = (
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center px-4 py-3 bg-white rounded-lg border border-zinc-200 hover:border-zinc-300 transition-colors">
+                <div>
                   <p className="text-sm font-medium text-zinc-900">{attempt.candidate.name}</p>
                   <p className="text-xs text-zinc-400">{attempt.candidate.email}</p>
                 </div>
@@ -129,7 +130,21 @@ export function AttemptsView({ exam, attempts, analytics }: {
                   )}
                 </div>
                 <div className="text-xs text-zinc-500">{formatDate(attempt.startedAt)}</div>
+                <div className="text-zinc-300">
+                  {attempt.status === "SUBMITTED" && <ChevronRight className="w-4 h-4" />}
+                </div>
               </div>
+            );
+            return attempt.status === "SUBMITTED" ? (
+              <Link
+                key={attempt.id}
+                href={`/dashboard/exams/${exam.id}/attempts/${attempt.id}`}
+                className="block"
+              >
+                {row}
+              </Link>
+            ) : (
+              <div key={attempt.id}>{row}</div>
             );
           })}
         </div>

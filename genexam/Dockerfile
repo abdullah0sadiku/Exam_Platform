@@ -33,6 +33,10 @@ RUN cp -r node_modules/.prisma .next/standalone/node_modules/.prisma && \
     cp -r node_modules/pg .next/standalone/node_modules/pg || true && \
     cp -r node_modules/pg-protocol .next/standalone/node_modules/pg-protocol || true && \
     cp -r node_modules/mammoth .next/standalone/node_modules/mammoth || true && \
+    # nodemailer + its transitive deps — used for the "email results" feature.
+    # Next.js tracing sometimes misses them because the import is inside a
+    # dynamically-resolved API route; defensive copy mirrors mammoth / pg.
+    cp -r node_modules/nodemailer .next/standalone/node_modules/nodemailer || true && \
     \
     # pdf-parse: Next.js traces index.cjs but not the worker (dynamically loaded).
     # The CJS bundle ships pdf.worker.mjs alongside index.cjs; copy it to the

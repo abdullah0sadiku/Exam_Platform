@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Save, Eye, Share2, EyeOff, Trash2, Plus, Copy, ChevronDown, ChevronUp,
-  CheckCircle, AlertCircle, Loader2
+  CheckCircle, AlertCircle, Loader2, Download
 } from "lucide-react";
 
 interface Question {
@@ -66,6 +66,7 @@ export function ExamEditor({ exam: initialExam }: { exam: Exam }) {
   const [publishing, setPublishing] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [expandedQ, setExpandedQ] = useState<string | null>(null);
+  const [downloadOpen, setDownloadOpen] = useState(false);
 
   function showToast(type: "success" | "error", msg: string) {
     setToast({ type, msg });
@@ -145,6 +146,11 @@ export function ExamEditor({ exam: initialExam }: { exam: Exam }) {
     }
   }
 
+  function downloadQuestions(format: "json" | "csv") {
+    setDownloadOpen(false);
+    window.location.assign(`/api/exams/${exam.id}/questions/export?format=${format}`);
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       {/* Toast */}
@@ -178,6 +184,41 @@ export function ExamEditor({ exam: initialExam }: { exam: Exam }) {
           <Link href={`/dashboard/exams/${exam.id}/attempts`}>
             <Button variant="outline" size="sm">Results</Button>
           </Link>
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDownloadOpen((v) => !v)}
+              disabled={exam.questions.length === 0}
+              title={exam.questions.length === 0 ? "Add questions first" : "Download questions"}
+            >
+              <Download className="w-4 h-4 mr-1" /> Download
+              <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-60" />
+            </Button>
+            {downloadOpen && (
+              <>
+                <button
+                  aria-label="Close download menu"
+                  className="fixed inset-0 z-10 cursor-default"
+                  onClick={() => setDownloadOpen(false)}
+                />
+                <div className="absolute right-0 mt-1 z-20 w-40 bg-white border border-zinc-200 rounded-md shadow-lg py-1 text-sm">
+                  <button
+                    onClick={() => downloadQuestions("json")}
+                    className="w-full text-left px-3 py-1.5 hover:bg-zinc-50 text-zinc-700"
+                  >
+                    JSON
+                  </button>
+                  <button
+                    onClick={() => downloadQuestions("csv")}
+                    className="w-full text-left px-3 py-1.5 hover:bg-zinc-50 text-zinc-700"
+                  >
+                    CSV
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           <Button variant="outline" size="sm" onClick={saveSettings} disabled={saving}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
             Save
