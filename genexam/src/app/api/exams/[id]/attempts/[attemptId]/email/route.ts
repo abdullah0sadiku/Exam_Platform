@@ -1,16 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireAuth, apiError } from "@/lib/api-helpers";
-import { sendMail } from "@/lib/email";
-import { renderResultEmail } from "@/lib/email-templates/result";
-import { loadAttemptForOwner } from "@/lib/email-templates/load-result-params";
-import { z } from "zod";
-
-const bodySchema = z.object({
-  includeBreakdown: z.boolean().default(false),
-});
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/api-helpers";
+import { sendResultEmail } from "@/lib/email";
 
 export async function POST(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string; attemptId: string }> }
 ) {
   const { error, userId } = await requireAuth();
@@ -18,34 +12,40 @@ export async function POST(
 
   const { id: examId, attemptId } = await params;
 
-  let includeBreakdown = false;
-  try {
-    const raw = await req.json().catch(() => ({}));
-    includeBreakdown = bodySchema.parse(raw).includeBreakdown;
-  } catch (err) {
-    if (err instanceof z.ZodError) return NextResponse.json({ error: err.issues }, { status: 400 });
-  }
+  const exam = await prisma.exam.findFirst({ where: { id: examId, userId: userId! } });
+  if (!exam) return NextResponse.json({ error: "Exam not found" }, { status: 404 });
 
-  const loaded = await loadAttemptForOwner(examId, attemptId, userId!);
-  if (loaded.kind === "error") return loaded.response;
-
-  const { subject, html, text } = renderResultEmail({
-    ...loaded.params,
-    answers: includeBreakdown ? loaded.params.answers : undefined,
+  const attempt = await prisma.examAttempt.findFirst({
+    where: { id: attemptId, examId },
+    include: { candidate: true },
   });
+  if (!attempt) return NextResponse.json({ error: "Attempt not found" }, { status: 404 });
+  if (attempt.status !== "SUBMITTED") {
+    return NextResponse.json({ error: "Attempt has not been submitted yet" }, { status: 400 });
+  }
+
+  const summary = attempt.resultSummary as { correct?: number; incorrect?: number; skipped?: number };
 
   try {
-    await sendMail({
-      to: loaded.params.candidate.email,
-      subject,
-      html,
-      text,
-      userId: userId!,
+    await sendResultEmail({
+      candidateName: attempt.candidate.name,
+      candidateEmail: attempt.candidate.email,
+      examTitle: exam.title,
+      percentage: attempt.percentage ?? 0,
+      score: attempt.score ?? 0,
+      totalPoints: exam.totalPoints,
+      passingScore: exam.passingScore,
+      passed: (attempt.percentage ?? 0) >= exam.passingScore,
+      correct: summary.correct ?? 0,
+      incorrect: summary.incorrect ?? 0,
+      skipped: summary.skipped ?? 0,
+      submittedAt: attempt.submittedAt ?? new Date(),
     });
-    return NextResponse.json({ success: true });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown email error";
-    console.error("[attempt email] send failed:", err);
-    return apiError(`Failed to send email: ${msg}`, 500);
+    const message = err instanceof Error ? err.message : "Failed to send email";
+    console.error("[email route]", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
+
+  return NextResponse.json({ ok: true });
 }

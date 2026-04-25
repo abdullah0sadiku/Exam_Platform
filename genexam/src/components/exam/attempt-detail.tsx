@@ -4,16 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ArrowLeft, Mail, Loader2, CheckCircle, XCircle, CircleDashed, AlertCircle, Eye } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, CircleDashed, AlertCircle, Mail, Loader2 } from "lucide-react";
 import { formatDate, formatDuration } from "@/lib/utils";
 
 interface AnswerRow {
@@ -56,10 +47,8 @@ function renderAnswer(v: unknown): string {
 }
 
 export function AttemptDetail({ exam, attempt }: { exam: Exam; attempt: Attempt }) {
-  const [emailOpen, setEmailOpen] = useState(false);
-  const [includeBreakdown, setIncludeBreakdown] = useState(false);
-  const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [sending, setSending] = useState(false);
 
   const submitted = attempt.status === "SUBMITTED";
   const passed = submitted && (attempt.percentage ?? 0) >= exam.passingScore;
@@ -74,23 +63,15 @@ export function AttemptDetail({ exam, attempt }: { exam: Exam; attempt: Attempt 
     setTimeout(() => setToast(null), 4000);
   }
 
-  async function sendEmail() {
+  async function handleSendResults() {
     setSending(true);
     try {
-      const res = await fetch(`/api/exams/${exam.id}/attempts/${attempt.id}/email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ includeBreakdown }),
-      });
+      const res = await fetch(`/api/exams/${exam.id}/attempts/${attempt.id}/email`, { method: "POST" });
       const data = await res.json();
-      if (res.ok) {
-        showToast("success", `Email sent to ${attempt.candidate.email}`);
-        setEmailOpen(false);
-      } else {
-        showToast("error", data.error || "Failed to send email");
-      }
-    } catch {
-      showToast("error", "Failed to send email");
+      if (!res.ok) throw new Error(data.error ?? "Failed to send email");
+      showToast("success", `Results sent to ${attempt.candidate.email}`);
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to send email");
     } finally {
       setSending(false);
     }
@@ -129,61 +110,14 @@ export function AttemptDetail({ exam, attempt }: { exam: Exam; attempt: Attempt 
           </div>
         </div>
         {submitted && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                window.open(
-                  `/api/exams/${exam.id}/attempts/${attempt.id}/email/preview?breakdown=${includeBreakdown ? 1 : 0}`,
-                  "_blank",
-                  "noopener,noreferrer"
-                )
-              }
-            >
-              <Eye className="w-4 h-4 mr-1.5" /> Preview
-            </Button>
-            <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Mail className="w-4 h-4 mr-1.5" /> Email result
-                </Button>
-              </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Email result to candidate</DialogTitle>
-                <DialogDescription>
-                  Sends to <strong>{attempt.candidate.email}</strong>.
-                </DialogDescription>
-              </DialogHeader>
-              <label className="flex items-center gap-2 text-sm text-zinc-700 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={includeBreakdown}
-                  onChange={(e) => setIncludeBreakdown(e.target.checked)}
-                  className="accent-zinc-900"
-                />
-                Include per-question breakdown
-              </label>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setEmailOpen(false)} disabled={sending}>
-                  Cancel
-                </Button>
-                <Button onClick={sendEmail} disabled={sending}>
-                  {sending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Sending…
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4 mr-1.5" /> Send
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-            </Dialog>
-          </div>
+          <Button onClick={handleSendResults} disabled={sending} size="sm" variant="outline">
+            {sending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Mail className="w-4 h-4 mr-2" />
+            )}
+            {sending ? "Sending…" : "Send Results"}
+          </Button>
         )}
       </div>
 
