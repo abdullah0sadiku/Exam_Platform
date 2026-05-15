@@ -20,10 +20,11 @@ export default async function AttemptsPage({ params }: { params: Promise<{ id: s
 
   if (!exam) notFound();
 
-  const submitted = exam.attempts.filter((a) => a.status === "SUBMITTED");
-  const scores = submitted.map((a) => a.percentage ?? 0);
-  const avgScore = scores.length > 0 ? Math.round(scores.reduce((acc, s) => acc + s, 0) / scores.length) : 0;
-  const passCount = submitted.filter((a) => (a.percentage ?? 0) >= exam.passingScore).length;
+  type Attempt = (typeof exam.attempts)[number];
+  const submitted = exam.attempts.filter((a: Attempt) => a.status === "SUBMITTED");
+  const scores = submitted.map((a: Attempt) => a.percentage ?? 0);
+  const avgScore = scores.length > 0 ? Math.round(scores.reduce((acc: number, s: number) => acc + s, 0) / scores.length) : 0;
+  const passCount = submitted.filter((a: Attempt) => (a.percentage ?? 0) >= exam.passingScore).length;
 
   return (
     <AttemptsView

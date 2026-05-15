@@ -69,14 +69,15 @@ export default async function OverviewPage() {
   const draftExams = examByStatus["DRAFT"] ?? 0;
 
   // ── Attempt stats ───────────────────────────────────────────────────────────
-  const submitted = attemptsRaw.filter((a) => a.status === "SUBMITTED");
+  type RawAttempt = (typeof attemptsRaw)[number];
+  const submitted = attemptsRaw.filter((a: RawAttempt) => a.status === "SUBMITTED");
   const passing = submitted.filter(
-    (a) => a.percentage !== null && a.percentage !== undefined && a.percentage >= a.exam.passingScore
+    (a: RawAttempt) => a.percentage !== null && a.percentage !== undefined && a.percentage >= a.exam.passingScore
   );
   const totalAttempts = attemptsRaw.length;
   const passRate = pct(passing.length, submitted.length);
 
-  const uniqueCandidateIds = new Set(attemptsRaw.map((a) => a.candidateId));
+  const uniqueCandidateIds = new Set(attemptsRaw.map((a: RawAttempt) => a.candidateId));
 
   // ── Token stats ─────────────────────────────────────────────────────────────
   let totalTokens = 0, promptTokens = 0, completionTokens = 0;
