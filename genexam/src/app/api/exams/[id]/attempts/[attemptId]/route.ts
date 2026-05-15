@@ -28,7 +28,7 @@ export async function GET(
     orderBy: { orderIndex: "asc" },
     select: { id: true, orderIndex: true },
   });
-  const order = new Map(questions.map((q: { id: string; orderIndex: number }) => [q.id, q.orderIndex]));
+  const order = new Map<string, number>(questions.map((q: { id: string; orderIndex: number }) => [q.id, q.orderIndex] as [string, number]));
   attempt.answers.sort(
     (a, b) => (order.get(a.questionId) ?? 0) - (order.get(b.questionId) ?? 0)
   );
