@@ -8,7 +8,7 @@ function getResend(): Resend {
 }
 
 function getFromAddress(): string {
-  return process.env.RESEND_FROM_EMAIL ?? "GenExam <onboarding@resend.dev>";
+  return process.env.RESEND_FROM_EMAIL ?? "Examy <onboarding@resend.dev>";
 }
 
 export async function sendResultEmail(params: ResultEmailParams): Promise<void> {

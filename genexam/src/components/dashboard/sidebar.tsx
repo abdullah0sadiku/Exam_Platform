@@ -24,7 +24,7 @@ export function Sidebar({ user }: { user: Session["user"] }) {
           <div className="w-7 h-7 bg-zinc-900 rounded-md flex items-center justify-center">
             <BookOpen className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="font-bold text-zinc-900">GenExam</span>
+          <span className="font-bold text-zinc-900">Examy</span>
         </div>
       </div>
 

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Clock, Loader2, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, Clock, Loader2, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 
 interface PublicQuestion {
   id: string;
@@ -35,8 +35,6 @@ interface PublicExam {
 }
 
 interface ScoreResult {
-  // When showResults is false the server strips score/passing info from the
-  // response, so everything except `showResults` may be undefined.
   score?: number;
   totalPoints?: number;
   percentage?: number;
@@ -52,6 +50,7 @@ interface ScoreResult {
 }
 
 type Phase = "loading" | "error" | "register" | "taking" | "submitting" | "result";
+type EmailStatus = "idle" | "checking" | "blocked" | "warned" | "clear";
 
 export function ExamTaker({ token }: { token: string }) {
   const [phase, setPhase] = useState<Phase>("loading");
@@ -59,12 +58,14 @@ export function ExamTaker({ token }: { token: string }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [emailStatus, setEmailStatus] = useState<EmailStatus>("idle");
   const [attemptId, setAttemptId] = useState("");
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [result, setResult] = useState<ScoreResult | null>(null);
   const [startedAt, setStartedAt] = useState<number>(0);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     async function loadExam() {
@@ -93,6 +94,22 @@ export function ExamTaker({ token }: { token: string }) {
     return () => clearInterval(tick);
   }, [phase, exam, startedAt]);
 
+  async function checkEmail(emailValue: string) {
+    if (!exam?.requireNameEmail || !emailValue) return;
+    setEmailStatus("checking");
+    try {
+      const res = await fetch(
+        `/api/public/exam/${token}/check-email?email=${encodeURIComponent(emailValue)}`
+      );
+      if (!res.ok) { setEmailStatus("idle"); return; }
+      const data: { hasAttempt: boolean; allowRetake: boolean } = await res.json();
+      if (!data.hasAttempt) { setEmailStatus("clear"); return; }
+      setEmailStatus(data.allowRetake ? "warned" : "blocked");
+    } catch {
+      setEmailStatus("idle");
+    }
+  }
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     if (!exam) return;
@@ -115,6 +132,7 @@ export function ExamTaker({ token }: { token: string }) {
 
   const handleSubmit = useCallback(async () => {
     if (!exam || !attemptId) return;
+    setShowConfirm(false);
     setPhase("submitting");
     const durationSeconds = Math.round((Date.now() - startedAt) / 1000);
     const submittedAnswers = exam.questions.map((q) => ({
@@ -200,11 +218,38 @@ export function ExamTaker({ token }: { token: string }) {
                     </div>
                     <div className="space-y-1.5">
                       <Label>Email</Label>
-                      <Input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" />
+                      <div className="relative">
+                        <Input
+                          required
+                          type="email"
+                          value={email}
+                          onChange={(e) => { setEmail(e.target.value); setEmailStatus("idle"); }}
+                          onBlur={(e) => checkEmail(e.target.value)}
+                          placeholder="your@email.com"
+                          className={emailStatus === "blocked" ? "border-red-400 focus:ring-red-400" : ""}
+                        />
+                        {emailStatus === "checking" && (
+                          <Loader2 className="absolute right-3 top-2.5 w-4 h-4 animate-spin text-zinc-400" />
+                        )}
+                      </div>
+                      {emailStatus === "blocked" && (
+                        <div className="flex items-start gap-2 mt-1.5 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+                          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                          <span>You have already completed this exam and the owner has not enabled retakes.</span>
+                        </div>
+                      )}
+                      {emailStatus === "warned" && (
+                        <div className="flex items-start gap-2 mt-1.5 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-700">
+                          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                          <span>You've previously taken this exam. You can take it again.</span>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
-                <Button type="submit" className="w-full">Start exam</Button>
+                <Button type="submit" className="w-full" disabled={emailStatus === "blocked"}>
+                  Start exam
+                </Button>
               </form>
             </CardContent>
           </Card>
@@ -222,14 +267,14 @@ export function ExamTaker({ token }: { token: string }) {
       <div className="min-h-screen bg-zinc-50">
         {/* Header */}
         <div className="bg-white border-b border-zinc-200 px-6 py-3 sticky top-0 z-10">
-          <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-zinc-900 truncate">{exam.title}</p>
+              <p className="text-sm font-semibold text-zinc-900 truncate">{exam.title}</p>
               <p className="text-xs text-zinc-500">Question {currentIndex + 1} of {exam.questions.length}</p>
             </div>
             <div className="flex items-center gap-4">
               {timeLeft !== null && (
-                <div className={`flex items-center gap-1.5 text-sm font-mono ${timeLeft < 300 ? "text-red-600" : "text-zinc-700"}`}>
+                <div className={`flex items-center gap-1.5 text-sm font-mono font-medium ${timeLeft < 300 ? "text-red-600" : "text-zinc-700"}`}>
                   <Clock className="w-4 h-4" />
                   {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
                 </div>
@@ -237,133 +282,123 @@ export function ExamTaker({ token }: { token: string }) {
               <Badge variant="secondary">{answeredCount}/{exam.questions.length} answered</Badge>
             </div>
           </div>
-          <div className="max-w-2xl mx-auto mt-2">
+          <div className="max-w-6xl mx-auto mt-2">
             <Progress value={progress} />
           </div>
         </div>
 
-        <div className="max-w-2xl mx-auto px-6 py-8">
-          {/* Question */}
-          <Card className="mb-6">
-            <CardHeader>
-              <p className="text-xs text-zinc-400 font-mono mb-2">Q{currentIndex + 1} · {q.points} pt{q.points !== 1 ? "s" : ""}</p>
-              <CardTitle className="text-base leading-relaxed font-medium">{q.questionText}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <QuestionInput
-                question={q}
-                answer={answers[q.id]}
-                onChange={(v) => setAnswer(q.id, v)}
-                onToggleMulti={(opt) => toggleMultiSelect(q.id, opt)}
-              />
-            </CardContent>
-          </Card>
+        {/* Two-column layout */}
+        <div className="max-w-6xl mx-auto px-6 py-8 flex gap-8 items-start">
+          {/* Main — question */}
+          <div className="flex-1 min-w-0">
+            <Card className="mb-5">
+              <CardHeader className="pb-3">
+                <p className="text-xs text-zinc-400 font-mono mb-1">Q{currentIndex + 1} · {q.points} pt{q.points !== 1 ? "s" : ""}</p>
+                <CardTitle className="text-lg leading-relaxed font-medium">{q.questionText}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <QuestionInput
+                  question={q}
+                  answer={answers[q.id]}
+                  onChange={(v) => setAnswer(q.id, v)}
+                  onToggleMulti={(opt) => toggleMultiSelect(q.id, opt)}
+                />
+              </CardContent>
+            </Card>
 
-          {/* Navigation */}
-          <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))} disabled={currentIndex === 0}>
-              <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-            </Button>
-            {currentIndex < exam.questions.length - 1 ? (
-              <Button onClick={() => setCurrentIndex((i) => i + 1)}>
-                Next <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            ) : (
+            {/* Prev / Next */}
+            <div className="flex items-center justify-between">
               <Button
-                onClick={() => { if (confirm(`Submit exam? You've answered ${answeredCount} of ${exam.questions.length} questions.`)) handleSubmit(); }}
-                disabled={phase === "submitting"}
-                variant="success"
+                variant="outline"
+                onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                disabled={currentIndex === 0}
               >
-                {phase === "submitting" ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Submitting…</> : "Submit exam"}
+                <ChevronLeft className="w-4 h-4 mr-1" /> Previous
               </Button>
-            )}
+              {currentIndex < exam.questions.length - 1 && (
+                <Button onClick={() => setCurrentIndex((i) => i + 1)}>
+                  Next <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              )}
+            </div>
           </div>
 
-          {/* Question grid nav */}
-          <div className="mt-8">
-            <p className="text-xs text-zinc-500 mb-2">Questions</p>
-            <div className="flex flex-wrap gap-1.5">
-              {exam.questions.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentIndex(i)}
-                  className={`w-8 h-8 text-xs rounded-md border transition-colors ${
-                    i === currentIndex ? "bg-zinc-900 text-white border-zinc-900" :
-                    answers[exam.questions[i].id] !== undefined && answers[exam.questions[i].id] !== null && answers[exam.questions[i].id] !== ""
-                      ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                      : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-400"
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
+          {/* Sidebar */}
+          <div className="w-56 shrink-0">
+            <div className="sticky top-24 space-y-4">
+              {/* Question grid */}
+              <div className="bg-white border border-zinc-200 rounded-xl p-4">
+                <p className="text-xs font-medium text-zinc-500 mb-3">Questions</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {exam.questions.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentIndex(i)}
+                      className={`w-8 h-8 text-xs rounded-md border transition-colors ${
+                        i === currentIndex
+                          ? "bg-zinc-900 text-white border-zinc-900"
+                          : answers[exam.questions[i].id] !== undefined &&
+                            answers[exam.questions[i].id] !== null &&
+                            answers[exam.questions[i].id] !== ""
+                          ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                          : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-400"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-zinc-400 mt-3">
+                  {answeredCount} of {exam.questions.length} answered
+                </p>
+              </div>
+
+              {/* Submit */}
+              <Button
+                className="w-full"
+                onClick={() => setShowConfirm(true)}
+                disabled={phase === "submitting"}
+              >
+                {phase === "submitting"
+                  ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Submitting…</>
+                  : "Submit exam"}
+              </Button>
+
+              {errorMsg && (
+                <p className="text-xs text-red-600 text-center">{errorMsg}</p>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Confirmation modal */}
+        {showConfirm && (
+          <ConfirmModal
+            answeredCount={answeredCount}
+            total={exam.questions.length}
+            onConfirm={handleSubmit}
+            onCancel={() => setShowConfirm(false)}
+          />
+        )}
       </div>
     );
   }
 
-  if (phase === "result" && result) {
-    const showResults = result.showResults;
-    const passed = showResults && result.passed === true;
-    const summary = result.resultSummary;
+  if (phase === "result") {
     return (
       <FullscreenCenter>
         <div className="w-full max-w-md">
           <Card>
             <CardHeader className="text-center">
-              <div
-                className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                  showResults ? (passed ? "bg-emerald-100" : "bg-red-100") : "bg-zinc-100"
-                }`}
-              >
-                <CheckCircle2
-                  className={`w-7 h-7 ${
-                    showResults ? (passed ? "text-emerald-600" : "text-red-500") : "text-zinc-500"
-                  }`}
-                />
+              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
               </div>
-              <CardTitle>
-                {showResults ? (passed ? "Well done!" : "Exam complete") : "Submission received"}
-              </CardTitle>
-              <CardDescription>
-                {showResults
-                  ? passed
-                    ? "You passed!"
-                    : `Passing score: ${result.passingScore}%`
-                  : "Thanks for completing the exam."}
-              </CardDescription>
+              <CardTitle>Submission received</CardTitle>
+              <CardDescription>Thank you for completing the exam.</CardDescription>
             </CardHeader>
-            {showResults && summary ? (
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <p className="text-4xl font-bold text-zinc-900">{result.percentage}%</p>
-                  <p className="text-sm text-zinc-500">
-                    {result.score} / {result.totalPoints} points
-                  </p>
-                </div>
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="p-3 bg-emerald-50 rounded-lg">
-                    <p className="text-lg font-bold text-emerald-700">{summary.correct}</p>
-                    <p className="text-xs text-emerald-600">Correct</p>
-                  </div>
-                  <div className="p-3 bg-red-50 rounded-lg">
-                    <p className="text-lg font-bold text-red-700">{summary.incorrect}</p>
-                    <p className="text-xs text-red-600">Incorrect</p>
-                  </div>
-                  <div className="p-3 bg-zinc-50 rounded-lg">
-                    <p className="text-lg font-bold text-zinc-700">{summary.skipped}</p>
-                    <p className="text-xs text-zinc-500">Skipped</p>
-                  </div>
-                </div>
-                <Progress value={result.percentage ?? 0} className="h-3" />
-              </CardContent>
-            ) : (
-              <CardContent className="text-center text-zinc-500 text-sm py-4">
-                Your submission has been recorded. Results will be shared by the exam owner.
-              </CardContent>
-            )}
+            <CardContent className="text-center text-sm text-zinc-500 pb-6">
+              Your answers have been recorded. Results will be shared by the exam owner.
+            </CardContent>
           </Card>
         </div>
       </FullscreenCenter>
@@ -371,6 +406,42 @@ export function ExamTaker({ token }: { token: string }) {
   }
 
   return null;
+}
+
+function ConfirmModal({ answeredCount, total, onConfirm, onCancel }: {
+  answeredCount: number;
+  total: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const unanswered = total - answeredCount;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+        <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="w-6 h-6 text-amber-600" />
+        </div>
+        <h2 className="text-lg font-semibold text-zinc-900 text-center mb-2">Submit exam?</h2>
+        <p className="text-sm text-zinc-500 text-center mb-1">
+          You've answered <span className="font-semibold text-zinc-700">{answeredCount} of {total}</span> questions.
+        </p>
+        {unanswered > 0 && (
+          <p className="text-sm text-amber-600 text-center mb-5">
+            {unanswered} question{unanswered !== 1 ? "s" : ""} will be marked as skipped.
+          </p>
+        )}
+        {unanswered === 0 && <div className="mb-5" />}
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button className="flex-1" onClick={onConfirm}>
+            Submit
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function QuestionInput({ question, answer, onChange, onToggleMulti }: {
@@ -383,7 +454,12 @@ function QuestionInput({ question, answer, onChange, onToggleMulti }: {
     return (
       <div className="space-y-2">
         {question.options.map((opt, i) => (
-          <label key={i} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${answer === opt ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 hover:border-zinc-300"}`}>
+          <label
+            key={i}
+            className={`flex items-center gap-3 p-3.5 rounded-lg border cursor-pointer transition-colors ${
+              answer === opt ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+            }`}
+          >
             <input type="radio" name={question.id} value={opt} checked={answer === opt} onChange={() => onChange(opt)} className="accent-zinc-900" />
             <span className="text-sm">{opt}</span>
           </label>
@@ -398,7 +474,12 @@ function QuestionInput({ question, answer, onChange, onToggleMulti }: {
       <div className="space-y-2">
         <p className="text-xs text-zinc-500 mb-2">Select all that apply</p>
         {question.options.map((opt, i) => (
-          <label key={i} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selected.includes(opt) ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 hover:border-zinc-300"}`}>
+          <label
+            key={i}
+            className={`flex items-center gap-3 p-3.5 rounded-lg border cursor-pointer transition-colors ${
+              selected.includes(opt) ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+            }`}
+          >
             <input type="checkbox" checked={selected.includes(opt)} onChange={() => onToggleMulti(opt)} className="accent-zinc-900" />
             <span className="text-sm">{opt}</span>
           </label>
@@ -414,7 +495,9 @@ function QuestionInput({ question, answer, onChange, onToggleMulti }: {
           <button
             key={opt}
             onClick={() => onChange(opt)}
-            className={`flex-1 py-3 rounded-lg border text-sm font-medium transition-colors ${answer === opt ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 hover:border-zinc-400"}`}
+            className={`flex-1 py-3.5 rounded-lg border text-sm font-medium transition-colors ${
+              answer === opt ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50"
+            }`}
           >
             {opt}
           </button>
@@ -427,7 +510,7 @@ function QuestionInput({ question, answer, onChange, onToggleMulti }: {
   const isLong = question.questionType === "OPEN_ENDED";
   return isLong ? (
     <textarea
-      className="w-full min-h-[120px] text-sm border border-zinc-200 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-zinc-400 resize-none"
+      className="w-full min-h-[140px] text-sm border border-zinc-200 rounded-lg p-3.5 focus:outline-none focus:ring-1 focus:ring-zinc-400 resize-none"
       placeholder="Your answer..."
       value={(answer as string) || ""}
       onChange={(e) => onChange(e.target.value)}
@@ -435,7 +518,7 @@ function QuestionInput({ question, answer, onChange, onToggleMulti }: {
   ) : (
     <input
       type="text"
-      className="w-full h-9 text-sm border border-zinc-200 rounded-md px-3 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+      className="w-full h-10 text-sm border border-zinc-200 rounded-lg px-3.5 focus:outline-none focus:ring-1 focus:ring-zinc-400"
       placeholder="Your answer..."
       value={(answer as string) || ""}
       onChange={(e) => onChange(e.target.value)}

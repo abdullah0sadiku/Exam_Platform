@@ -324,7 +324,6 @@ export function ExamEditor({ exam: initialExam }: { exam: Exam }) {
                   { key: "showExplanations", label: "Show explanations after submission" },
                   { key: "shuffleQuestions", label: "Shuffle question order" },
                   { key: "shuffleAnswers", label: "Shuffle answer options" },
-                  { key: "allowRetake", label: "Allow retakes" },
                   { key: "requireNameEmail", label: "Require name and email" },
                 ].map(({ key, label }) => (
                   <div key={key} className="flex items-center justify-between py-1">
@@ -335,6 +334,34 @@ export function ExamEditor({ exam: initialExam }: { exam: Exam }) {
                     />
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Attempts</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start justify-between gap-4 py-1">
+                  <div>
+                    <p className="text-sm text-zinc-700">Allow multiple attempts</p>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      When off, each candidate can only submit once. Returning candidates are identified by their email address.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={exam.allowRetake}
+                    onCheckedChange={(v) => setExam((p) => ({ ...p, allowRetake: v }))}
+                  />
+                </div>
+                {!exam.allowRetake && !exam.requireNameEmail && (
+                  <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
+                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <span>
+                      Enable <strong>Require name and email</strong> in Behavior so candidates can be identified and the one-attempt limit can be enforced.
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

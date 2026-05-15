@@ -40,7 +40,7 @@ export function buildResultEmail(p: ResultEmailParams): { subject: string; html:
         <!-- Header -->
         <tr>
           <td style="background:#18181b;padding:28px 32px;">
-            <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">GenExam</p>
+            <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">Examy</p>
             <p style="margin:4px 0 0;font-size:13px;color:#a1a1aa;">Exam Results</p>
           </td>
         </tr>
@@ -103,7 +103,7 @@ export function buildResultEmail(p: ResultEmailParams): { subject: string; html:
         <tr>
           <td style="padding:20px 32px;border-top:1px solid #f4f4f5;background:#fafafa;">
             <p style="margin:0;font-size:12px;color:#a1a1aa;text-align:center;">
-              Sent by GenExam &mdash; This email was generated automatically.
+              Sent by Examy &mdash; This email was generated automatically.
             </p>
           </td>
         </tr>
@@ -127,7 +127,7 @@ Skipped:   ${p.skipped}
 
 Submitted: ${new Date(p.submittedAt).toLocaleDateString("en-US", { dateStyle: "long" })}
 
-— GenExam`;
+— Examy`;
 
   return { subject, html, text };
 }

@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GenExam – AI Exam Platform",
+  title: "Examy – AI Exam Platform",
   description: "Generate, manage, and share AI-powered exams",
 };
 

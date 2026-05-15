@@ -38,7 +38,7 @@ export function SettingsTabs({ user }: { user: UserSlice }) {
             </CardContent>
           </Card>
           <div className="mt-4 p-4 bg-zinc-50 rounded-lg border border-zinc-200 text-sm text-zinc-500">
-            <p className="font-medium text-zinc-700 mb-1">GenExam v1.0</p>
+            <p className="font-medium text-zinc-700 mb-1">Examy v1.0</p>
             <p>
               AI-powered internal exam platform. Configure AI providers in the AI Providers section
               to get started.
