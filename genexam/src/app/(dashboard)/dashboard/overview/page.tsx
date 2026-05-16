@@ -277,7 +277,7 @@ export default async function OverviewPage() {
                 <span className="text-center">Tokens</span>
                 <span className="text-center">Success</span>
               </div>
-              {providers.map((p) => {
+              {providers.map((p: (typeof providers)[number]) => {
                 const usage = modelMap.get(p.modelName);
                 return (
                   <div
