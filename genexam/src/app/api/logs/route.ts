@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     take: 50,
   });
 
-  const sanitized = logs.map((log) => ({
+  const sanitized = logs.map((log: (typeof logs)[number]) => ({
     ...log,
     requestPayload: sanitizePayload(log.requestPayload),
   }));
