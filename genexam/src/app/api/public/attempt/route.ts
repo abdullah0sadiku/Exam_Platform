@@ -90,7 +90,7 @@ async function handleSubmit(req: Request) {
 
     // Score attempt
     const scored = scoreAttempt(
-      exam.questions.map((q) => ({
+      exam.questions.map((q: (typeof exam.questions)[number]) => ({
         id: q.id,
         examId: q.examId,
         questionText: q.questionText,
@@ -110,7 +110,7 @@ async function handleSubmit(req: Request) {
 
     // Save answers
     await prisma.attemptAnswer.createMany({
-      data: scored.answers.map((a) => ({
+      data: scored.answers.map((a: (typeof scored.answers)[number]) => ({
         attemptId,
         questionId: a.questionId,
         answer: a.answer as string,

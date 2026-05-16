@@ -43,7 +43,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       "correctAnswer",
       "explanation",
     ];
-    const rows = exam.questions.map((q) => [
+    type QRow = (typeof exam.questions)[number];
+    const rows = exam.questions.map((q: QRow) => [
       q.orderIndex,
       q.questionText,
       q.questionType,
@@ -54,7 +55,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       toDisplay(q.correctAnswer),
       q.explanation ?? "",
     ]);
-    const csv = [header, ...rows].map((r) => r.map(csvEscape).join(",")).join("\n");
+    const csv = [header, ...rows].map((r: (string | number | null | undefined)[]) => r.map(csvEscape).join(",")).join("\n");
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
@@ -72,7 +73,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     title: exam.title,
     description: exam.description,
     totalPoints: exam.totalPoints,
-    questions: exam.questions.map((q) => ({
+    questions: exam.questions.map((q: (typeof exam.questions)[number]) => ({
       orderIndex: q.orderIndex,
       questionText: q.questionText,
       questionType: q.questionType,

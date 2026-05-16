@@ -137,7 +137,7 @@ export async function POST(req: Request) {
         })),
       });
 
-      const totalPoints = result.exam.questions.reduce((s, q) => s + q.points, 0);
+      const totalPoints = result.exam.questions.reduce((s: number, q: { points: number }) => s + q.points, 0);
       await prisma.exam.update({ where: { id: exam.id }, data: { totalPoints } });
 
       await prisma.generationLog.update({

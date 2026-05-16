@@ -34,7 +34,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         requireNameEmail: exam.requireNameEmail,
         metadata: toJson(exam.metadata),
         questions: {
-          create: exam.questions.map((q) => ({
+          create: exam.questions.map((q: (typeof exam.questions)[number]) => ({
             questionText: q.questionText,
             questionType: q.questionType,
             options: toJson(q.options),

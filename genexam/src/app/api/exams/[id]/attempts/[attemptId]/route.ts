@@ -29,8 +29,9 @@ export async function GET(
     select: { id: true, orderIndex: true },
   });
   const order = new Map<string, number>(questions.map((q: { id: string; orderIndex: number }) => [q.id, q.orderIndex] as [string, number]));
+  type AnswerItem = (typeof attempt.answers)[number];
   attempt.answers.sort(
-    (a, b) => (order.get(a.questionId) ?? 0) - (order.get(b.questionId) ?? 0)
+    (a: AnswerItem, b: AnswerItem) => (order.get(a.questionId) ?? 0) - (order.get(b.questionId) ?? 0)
   );
 
   return NextResponse.json({ exam, attempt });

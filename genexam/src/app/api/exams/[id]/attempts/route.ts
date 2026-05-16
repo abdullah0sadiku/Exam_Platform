@@ -19,10 +19,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     orderBy: { startedAt: "desc" },
   });
 
-  const submitted = attempts.filter((a) => a.status === "SUBMITTED");
-  const scores = submitted.map((a) => a.percentage || 0);
+  type AttemptRow = (typeof attempts)[number];
+  const submitted = attempts.filter((a: AttemptRow) => a.status === "SUBMITTED");
+  const scores = submitted.map((a: AttemptRow) => a.percentage || 0);
   const avgScore = scores.length > 0 ? Math.round(scores.reduce((acc: number, s: number) => acc + s, 0) / scores.length) : 0;
-  const passCount = submitted.filter((a) => (a.percentage || 0) >= exam.passingScore).length;
+  const passCount = submitted.filter((a: AttemptRow) => (a.percentage || 0) >= exam.passingScore).length;
 
   return NextResponse.json({
     attempts,

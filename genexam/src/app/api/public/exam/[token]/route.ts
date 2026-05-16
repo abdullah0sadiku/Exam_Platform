@@ -29,7 +29,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
 
   const exam = shareLink.exam;
   // Strip correct answers and explanations
-  const sanitizedQuestions = exam.questions.map((q) => ({
+  const sanitizedQuestions = exam.questions.map((q: (typeof exam.questions)[number]) => ({
     id: q.id,
     questionText: q.questionText,
     questionType: q.questionType,

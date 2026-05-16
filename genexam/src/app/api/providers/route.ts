@@ -27,7 +27,7 @@ export async function GET() {
   });
 
   return NextResponse.json(
-    configs.map((c) => ({ ...c, encryptedApiKey: maskApiKey(c.encryptedApiKey) }))
+    configs.map((c: (typeof configs)[number]) => ({ ...c, encryptedApiKey: maskApiKey(c.encryptedApiKey) }))
   );
 }
 
