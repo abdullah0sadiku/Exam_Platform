@@ -29,8 +29,9 @@ export default async function AttemptDetailPage({
     select: { id: true, orderIndex: true },
   });
   const order = new Map<string, number>(questions.map((q: { id: string; orderIndex: number }) => [q.id, q.orderIndex] as [string, number]));
+  type Answer = (typeof attempt.answers)[number];
   const answers = [...attempt.answers].sort(
-    (a, b) => (order.get(a.questionId) ?? 0) - (order.get(b.questionId) ?? 0)
+    (a: Answer, b: Answer) => (order.get(a.questionId) ?? 0) - (order.get(b.questionId) ?? 0)
   );
 
   return (
@@ -51,7 +52,7 @@ export default async function AttemptDetailPage({
         durationSeconds: attempt.durationSeconds,
         candidate: { name: attempt.candidate.name, email: attempt.candidate.email },
         resultSummary: (attempt.resultSummary ?? {}) as Record<string, unknown>,
-        answers: answers.map((a) => ({
+        answers: answers.map((a: Answer) => ({
           questionId: a.questionId,
           questionText: a.question.questionText,
           questionType: a.question.questionType,

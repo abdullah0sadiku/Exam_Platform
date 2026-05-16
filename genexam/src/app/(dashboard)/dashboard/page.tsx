@@ -14,11 +14,12 @@ export default async function DashboardPage() {
   });
 
   // Serialise dates for client component
-  const exams = examsRaw.map((e) => ({
+  type ExamRow = (typeof examsRaw)[number];
+  const exams = examsRaw.map((e: ExamRow) => ({
     ...e,
     createdAt: e.createdAt,
     updatedAt: e.updatedAt,
-    shareLinks: e.shareLinks.map((sl) => ({ token: sl.token })),
+    shareLinks: e.shareLinks.map((sl: ExamRow["shareLinks"][number]) => ({ token: sl.token })),
   }));
 
   return <ExamsDashboard initialExams={exams} />;

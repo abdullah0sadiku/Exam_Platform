@@ -36,7 +36,7 @@ export default async function ExamPage({ params }: { params: Promise<{ id: strin
         allowRetake: exam.allowRetake,
         requireNameEmail: exam.requireNameEmail,
         totalPoints: exam.totalPoints,
-        questions: exam.questions.map((q) => ({
+        questions: exam.questions.map((q: (typeof exam.questions)[number]) => ({
           id: q.id,
           questionText: q.questionText,
           questionType: q.questionType,
@@ -49,7 +49,7 @@ export default async function ExamPage({ params }: { params: Promise<{ id: strin
           points: q.points,
           orderIndex: q.orderIndex,
         })),
-        shareLinks: exam.shareLinks.map((sl) => ({ token: sl.token })),
+        shareLinks: exam.shareLinks.map((sl: (typeof exam.shareLinks)[number]) => ({ token: sl.token })),
         _count: exam._count,
       }}
     />

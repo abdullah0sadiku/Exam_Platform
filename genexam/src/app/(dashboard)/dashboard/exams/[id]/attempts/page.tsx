@@ -29,7 +29,7 @@ export default async function AttemptsPage({ params }: { params: Promise<{ id: s
   return (
     <AttemptsView
       exam={{ id: exam.id, title: exam.title, passingScore: exam.passingScore, questionCount: exam._count.questions }}
-      attempts={exam.attempts.map((a) => ({
+      attempts={exam.attempts.map((a: Attempt) => ({
         id: a.id,
         status: a.status,
         score: a.score,

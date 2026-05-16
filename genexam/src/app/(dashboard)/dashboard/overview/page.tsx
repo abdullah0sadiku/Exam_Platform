@@ -63,8 +63,9 @@ export default async function OverviewPage() {
   ]);
 
   // ── Exam stats ──────────────────────────────────────────────────────────────
-  const examByStatus = Object.fromEntries(examRows.map((r) => [r.status, r._count.id]));
-  const totalExams = Object.values(examByStatus).reduce((s, c) => s + c, 0);
+  type ExamRow = (typeof examRows)[number];
+  const examByStatus = Object.fromEntries(examRows.map((r: ExamRow) => [r.status, r._count.id] as [string, number]));
+  const totalExams = Object.values(examByStatus).reduce((s: number, c: number) => s + c, 0);
   const publishedExams = examByStatus["PUBLISHED"] ?? 0;
   const draftExams = examByStatus["DRAFT"] ?? 0;
 
@@ -89,9 +90,10 @@ export default async function OverviewPage() {
   }
 
   // ── Generation health ───────────────────────────────────────────────────────
+  type RawLog = (typeof logsRaw)[number];
   const totalGenerations = logsRaw.length;
-  const successGenerations = logsRaw.filter((l) => l.status === "SUCCESS").length;
-  const failedGenerations = logsRaw.filter((l) => l.status === "FAILED").length;
+  const successGenerations = logsRaw.filter((l: RawLog) => l.status === "SUCCESS").length;
+  const failedGenerations = logsRaw.filter((l: RawLog) => l.status === "FAILED").length;
   const successRate = pct(successGenerations, totalGenerations);
 
   // ── Models breakdown ────────────────────────────────────────────────────────
@@ -208,7 +210,7 @@ export default async function OverviewPage() {
                 {/* Mode breakdown */}
                 <div className="pt-2 border-t border-zinc-100 space-y-1.5">
                   {(["TOPIC", "DOCUMENT"] as const).map((mode) => {
-                    const count = logsRaw.filter((l) => l.generationMode === mode).length;
+                    const count = logsRaw.filter((l: RawLog) => l.generationMode === mode).length;
                     if (count === 0) return null;
                     return (
                       <div key={mode} className="flex items-center justify-between text-xs text-zinc-500">
