@@ -266,20 +266,23 @@ export function ExamTaker({ token }: { token: string }) {
     return (
       <div className="min-h-screen bg-zinc-50">
         {/* Header */}
-        <div className="bg-white border-b border-zinc-200 px-6 py-3 sticky top-0 z-10">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div>
+        <div className="bg-white border-b border-zinc-200 px-3 sm:px-6 py-3 sticky top-0 z-10">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-zinc-900 truncate">{exam.title}</p>
-              <p className="text-xs text-zinc-500">Question {currentIndex + 1} of {exam.questions.length}</p>
+              <p className="text-xs text-zinc-500">Q {currentIndex + 1}/{exam.questions.length}</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               {timeLeft !== null && (
                 <div className={`flex items-center gap-1.5 text-sm font-mono font-medium ${timeLeft < 300 ? "text-red-600" : "text-zinc-700"}`}>
                   <Clock className="w-4 h-4" />
                   {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
                 </div>
               )}
-              <Badge variant="secondary">{answeredCount}/{exam.questions.length} answered</Badge>
+              <Badge variant="secondary" className="whitespace-nowrap text-xs">
+                {answeredCount}/{exam.questions.length}
+                <span className="hidden sm:inline"> answered</span>
+              </Badge>
             </div>
           </div>
           <div className="max-w-6xl mx-auto mt-2">
@@ -288,9 +291,9 @@ export function ExamTaker({ token }: { token: string }) {
         </div>
 
         {/* Two-column layout */}
-        <div className="max-w-6xl mx-auto px-6 py-8 flex gap-8 items-start">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-8 flex flex-col lg:flex-row gap-4 lg:gap-8 items-start">
           {/* Main — question */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 w-full">
             <Card className="mb-5">
               <CardHeader className="pb-3">
                 <p className="text-xs text-zinc-400 font-mono mb-1">Q{currentIndex + 1} · {q.points} pt{q.points !== 1 ? "s" : ""}</p>
@@ -324,8 +327,8 @@ export function ExamTaker({ token }: { token: string }) {
           </div>
 
           {/* Sidebar */}
-          <div className="w-56 shrink-0">
-            <div className="sticky top-24 space-y-4">
+          <div className="w-full lg:w-56 lg:shrink-0">
+            <div className="lg:sticky lg:top-24 space-y-4">
               {/* Question grid */}
               <div className="bg-white border border-zinc-200 rounded-xl p-4">
                 <p className="text-xs font-medium text-zinc-500 mb-3">Questions</p>

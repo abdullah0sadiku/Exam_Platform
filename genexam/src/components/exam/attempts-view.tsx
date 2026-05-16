@@ -89,20 +89,21 @@ export function AttemptsView({ exam, attempts, analytics }: {
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 px-4 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wide">
+          <div className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 sm:gap-4 px-4 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wide">
             <span>Candidate</span>
             <span>Status</span>
             <span>Score</span>
-            <span>Date</span>
+            <span className="hidden sm:block">Date</span>
             <span className="sr-only">Details</span>
           </div>
           {attempts.map((attempt) => {
             const passed = attempt.status === "SUBMITTED" && (attempt.percentage || 0) >= exam.passingScore;
             const row = (
-              <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center px-4 py-3 bg-white rounded-lg border border-zinc-200 hover:border-zinc-300 transition-colors">
+              <div className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 sm:gap-4 items-center px-4 py-3 bg-white rounded-lg border border-zinc-200 hover:border-zinc-300 transition-colors">
                 <div>
                   <p className="text-sm font-medium text-zinc-900">{attempt.candidate.name}</p>
                   <p className="text-xs text-zinc-400">{attempt.candidate.email}</p>
+                  <p className="text-xs text-zinc-400 mt-0.5 sm:hidden">{formatDate(attempt.startedAt)}</p>
                 </div>
                 <div>
                   <Badge
@@ -118,9 +119,9 @@ export function AttemptsView({ exam, attempts, analytics }: {
                       <span className={`text-sm font-semibold ${passed ? "text-emerald-600" : "text-red-600"}`}>
                         {attempt.percentage}%
                       </span>
-                      <span className="text-xs text-zinc-400 ml-1">({attempt.score} pts)</span>
+                      <span className="hidden sm:inline text-xs text-zinc-400 ml-1">({attempt.score} pts)</span>
                       {attempt.durationSeconds && (
-                        <p className="text-xs text-zinc-400 flex items-center gap-1 mt-0.5">
+                        <p className="hidden sm:flex text-xs text-zinc-400 items-center gap-1 mt-0.5">
                           <Clock className="w-3 h-3" />{formatDuration(attempt.durationSeconds)}
                         </p>
                       )}
@@ -129,8 +130,8 @@ export function AttemptsView({ exam, attempts, analytics }: {
                     <span className="text-xs text-zinc-400">—</span>
                   )}
                 </div>
-                <div className="text-xs text-zinc-500">{formatDate(attempt.startedAt)}</div>
-                <div className="text-zinc-300">
+                <div className="hidden sm:block text-xs text-zinc-500">{formatDate(attempt.startedAt)}</div>
+                <div className="hidden sm:block text-zinc-300">
                   {attempt.status === "SUBMITTED" && <ChevronRight className="w-4 h-4" />}
                 </div>
               </div>

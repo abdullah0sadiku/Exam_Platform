@@ -162,20 +162,20 @@ export function ExamEditor({ exam: initialExam }: { exam: Exam }) {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3 min-w-0">
           <Link href="/dashboard"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4" /></Button></Link>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-zinc-900">{exam.title}</h1>
-              <Badge variant={exam.status === "PUBLISHED" ? "success" : "secondary"}>
+              <h1 className="text-xl font-bold text-zinc-900 truncate">{exam.title}</h1>
+              <Badge variant={exam.status === "PUBLISHED" ? "success" : "secondary"} className="shrink-0">
                 {exam.status === "PUBLISHED" ? "Published" : "Draft"}
               </Badge>
             </div>
             <p className="text-sm text-zinc-500">{exam.questions.length} questions · {exam.totalPoints} pts · {exam._count.attempts} attempts</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {exam.status === "PUBLISHED" && (
             <Button variant="outline" size="sm" onClick={copyShareLink}>
               <Share2 className="w-4 h-4 mr-1" /> Share
@@ -303,7 +303,7 @@ export function ExamEditor({ exam: initialExam }: { exam: Exam }) {
                   <Label>Instructions</Label>
                   <Textarea rows={3} value={exam.instructions || ""} onChange={(e) => setExam((p) => ({ ...p, instructions: e.target.value }))} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Duration (minutes)</Label>
                     <Input type="number" value={exam.durationMinutes ?? ""} onChange={(e) => setExam((p) => ({ ...p, durationMinutes: e.target.value ? Number(e.target.value) : null }))} placeholder="No limit" />
@@ -408,7 +408,7 @@ function QuestionEditor({ question, onSave }: { question: Question; onSave: (u: 
           />
         </div>
       )}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">Correct answer</Label>
           <Input value={correctAnswer} onChange={(e) => setCorrectAnswer(e.target.value)} className="text-sm" />

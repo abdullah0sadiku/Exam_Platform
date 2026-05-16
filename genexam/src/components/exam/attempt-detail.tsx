@@ -95,22 +95,22 @@ export function AttemptDetail({ exam, attempt }: { exam: Exam; attempt: Attempt 
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3 min-w-0">
           <Link href={`/dashboard/exams/${exam.id}/attempts`}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-xl font-bold text-zinc-900">{attempt.candidate.name}</h1>
-            <p className="text-sm text-zinc-500">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-zinc-900 truncate">{attempt.candidate.name}</h1>
+            <p className="text-sm text-zinc-500 truncate">
               {attempt.candidate.email} · {exam.title}
             </p>
           </div>
         </div>
         {submitted && (
-          <Button onClick={handleSendResults} disabled={sending} size="sm" variant="outline">
+          <Button onClick={handleSendResults} disabled={sending} size="sm" variant="outline" className="shrink-0 self-start sm:self-auto">
             {sending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
@@ -241,7 +241,7 @@ export function AttemptDetail({ exam, attempt }: { exam: Exam; attempt: Attempt 
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-0 pl-10 space-y-2 text-sm">
+                <CardContent className="pt-0 pl-6 sm:pl-10 space-y-2 text-sm">
                   <div>
                     <p className="text-xs font-medium text-zinc-500 mb-1">Candidate answer</p>
                     <div
