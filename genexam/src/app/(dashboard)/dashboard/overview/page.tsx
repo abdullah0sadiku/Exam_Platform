@@ -325,7 +325,7 @@ export default async function OverviewPage() {
             <p className="text-sm text-zinc-400 py-4 text-center">No activity yet</p>
           ) : (
             <div className="space-y-0">
-              {recentLogs.map((log) => {
+              {recentLogs.map((log: (typeof recentLogs)[number]) => {
                 const u = (log.tokenUsage ?? {}) as Record<string, number>;
                 const tokens = u.totalTokens ?? 0;
                 return (
